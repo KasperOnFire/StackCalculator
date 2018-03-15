@@ -7,14 +7,14 @@ import java.util.Stack;
 public class Calculator {
 
     private int sum;
-    private Stack<Integer> operations;
-    private Stack<Integer> undoneOperations;
+    private Stack<String[]> operations;
+    private Stack<String[]> undoneOperations;
     private Scanner scan;
     private boolean running;
 
     public Calculator() {
+        sum = 0;
         operations = new Stack<>();
-        operations.push(0);
         undoneOperations = new Stack<>();
         scan = new Scanner(System.in);
         running = true;
@@ -25,18 +25,7 @@ public class Calculator {
         while (running) {
             try {
                 String input = scan.nextLine();
-                String[] splitInput = null;
-                String cmd;
-                int number;
-                if (input.contains(" ")) {
-                    splitInput = input.split(" ");
-                    cmd = splitInput[0];
-                    number = Integer.parseInt(splitInput[1]);
-                } else {
-                    cmd = input;
-                    number = 0;
-                }
-                parseCmd(cmd, number);
+                parseCmd(input);
 
             } catch (ArrayIndexOutOfBoundsException e) {
                 System.out.println("Command not recognized.");
@@ -48,37 +37,69 @@ public class Calculator {
 
     }
 
-    public void parseCmd(String cmd, int number) {
+    public void parseCmd(String input) {
+        String[] splitInput;
 
+        if (input.contains(" ")) {
+            splitInput = input.split(" ");
+        } else {
+            splitInput = new String[2];
+            splitInput[0] = input;
+            splitInput[1] = "0";
+        }
+        String cmd = splitInput[0];
+        int number = Integer.parseInt(splitInput[1]);
+
+        if (cmd == "undo") {
+            undo();
+        } else if (cmd == "redo") {
+            redo();
+        } else {
+            calc(cmd, number);
+        }
+        operations.push(splitInput);
+    }
+
+    public void calc(String cmd, int number) {
         switch (cmd.toLowerCase()) {
             case "add":
-                operations.push(operations.peek() + number);
+                sum += number;
                 break;
             case "sub":
-                operations.push(operations.peek() - number);
+                sum -= number;
                 break;
             case "times":
-                operations.push(operations.peek() * number);
+                sum *= number;
                 break;
             case "div":
-                operations.push(operations.peek() / number);
-                break;
-            case "undo":
-                undoneOperations.push(operations.pop());
-                break;
-            case "redo":
-                try {
-                    operations.push(undoneOperations.pop());
-                } catch (EmptyStackException e) {
-                    System.out.println("nothing to undo.");
-                }
+                sum /= number;
                 break;
             case "stop":
                 running = false;
+                break;
             default:
                 System.out.println("Command not recognized.");
         }
+    }
 
+    public void undo() {
+        if (!operations.empty()) {
+            String[] lastOp = operations.pop();
+            undoneOperations.push(lastOp);
+            splitInput = lastOp;
+        } else {
+            System.out.println("nothing to undo");
+        }
+    }
+
+    public void redo() {
+        if (!undoneOperations.empty()) {
+            String[] lastOp = undoneOperations.pop();
+            operations.push(lastOp);
+            splitInput = lastOp;
+        } else {
+            System.out.println("nothing to redo.");
+        }
     }
 
 }
